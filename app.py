@@ -2,8 +2,37 @@ import streamlit as st
 import zipfile
 import io
 
+# Sidebar chọn theme
+theme = st.sidebar.radio("🎨 Chọn giao diện", ["🌞 Light", "🌙 Dark"])
+
+# CSS theo theme
+if theme == "🌙 Dark":
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background-color: #0d1b2a;
+            color: white;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+else:
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background-color: #f8f9fa;
+            color: black;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
 st.title("🔎 Multi Account Extractor (Web Version)")
-st.write("Upload file `.txt` dạng `url:tk:mk` và nhập từ khóa để lọc. Kết quả sẽ xuất ra `tk:mk` (loại trùng).")
+st.write("🖌 Bạn có thể đổi theme ở thanh bên trái (Light/Dark).")
 
 # Upload file
 uploaded_file = st.file_uploader("📂 Chọn file .txt", type=["txt"])
@@ -30,7 +59,7 @@ if uploaded_file and keywords_input:
                         tk = parts[-2]
                         mk = parts[-1]
                         results[kw].add(f"{tk}:{mk}")
-                    break  # 1 dòng chỉ lưu vào 1 keyword
+                    break
 
             # Hiển thị tiến trình %
             if idx % max(1, total_lines // 100) == 0:
@@ -44,20 +73,17 @@ if uploaded_file and keywords_input:
                 accounts = sorted(results[kw])
                 st.subheader(f"📌 {kw} ({len(accounts):,} dòng)")
                 if accounts:
-                    # Nút tải riêng
                     st.download_button(
                         label=f"⬇️ Tải {kw}_accounts.txt",
                         data="\n".join(accounts),
                         file_name=f"{kw}_accounts.txt",
                         mime="text/plain",
                     )
-                    # Thêm vào ZIP
                     zip_file.writestr(f"{kw}_accounts.txt", "\n".join(accounts))
                 else:
                     st.info(f"⚠️ Không tìm thấy tài khoản cho {kw}")
         zip_buffer.seek(0)
 
-        # Nút tải tất cả (ZIP)
         if any(results[kw] for kw in keywords):
             st.download_button(
                 label="📦 Tải tất cả kết quả (ZIP)",
