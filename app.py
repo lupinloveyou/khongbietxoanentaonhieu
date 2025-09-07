@@ -2,41 +2,11 @@ import streamlit as st
 import zipfile
 import io
 
-# Sidebar chọn theme
-theme = st.sidebar.radio("🎨 Chọn giao diện", ["🌞 Light", "🌙 Dark"])
-
-# CSS theo theme
-if theme == "🌙 Dark":
-    st.markdown(
-        """
-        <style>
-        .stApp {
-            background-color: #0d1b2a;
-            color: white;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-else:
-    st.markdown(
-        """
-        <style>
-        .stApp {
-            background-color: #f8f9fa;
-            color: black;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
 st.title("🔎 Multi Account Extractor (Web Version)")
-st.write("🖌 Bạn có thể đổi theme ở thanh bên trái (Light/Dark).")
+st.write("✅ Logic đã chỉnh lại giống hệt bản PC. Sẽ lọc chính xác `tk:mk`.")
 
 # Upload file
 uploaded_file = st.file_uploader("📂 Chọn file .txt", type=["txt"])
-# Input từ khóa
 keywords_input = st.text_input("🔑 Nhập từ khóa (cách nhau bởi dấu phẩy)", "garena,roblox,epicgames")
 
 if uploaded_file and keywords_input:
@@ -51,28 +21,30 @@ if uploaded_file and keywords_input:
 
         # Xử lý từng dòng
         for idx, line in enumerate(lines, start=1):
-            line = line.strip().lower()
+            raw_line = line.strip()
+            line = raw_line.lower()
             for kw in keywords:
                 if kw in line:
-                    parts = line.split(":")
+                    parts = raw_line.split(":")  # dùng raw_line để giữ nguyên chữ hoa/thường
                     if len(parts) >= 3:
-                        tk = parts[-2]
-                        mk = parts[-1]
+                        tk = parts[-2].strip()
+                        mk = parts[-1].strip()
                         results[kw].add(f"{tk}:{mk}")
-                    break
+                    break  # 1 dòng chỉ lưu 1 keyword
 
             # Hiển thị tiến trình %
             if idx % max(1, total_lines // 100) == 0:
                 percent = (idx / total_lines) * 100
                 st.progress(int(percent))
 
-        # Hiển thị kết quả
+        # Xuất kết quả
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w") as zip_file:
             for kw in keywords:
                 accounts = sorted(results[kw])
                 st.subheader(f"📌 {kw} ({len(accounts):,} dòng)")
                 if accounts:
+                    # Nút tải riêng
                     st.download_button(
                         label=f"⬇️ Tải {kw}_accounts.txt",
                         data="\n".join(accounts),
@@ -84,6 +56,7 @@ if uploaded_file and keywords_input:
                     st.info(f"⚠️ Không tìm thấy tài khoản cho {kw}")
         zip_buffer.seek(0)
 
+        # ZIP tất cả
         if any(results[kw] for kw in keywords):
             st.download_button(
                 label="📦 Tải tất cả kết quả (ZIP)",
